@@ -83,7 +83,7 @@ export function Dashboard({ onMemberClick, onQuestionClick, onNewsClick }: Dashb
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 animate-slideUp xl:h-[600px] xl:flex xl:flex-col">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 flex items-center">
             <span className="text-xl sm:text-2xl mr-2">🏆</span>
-            活発な議員
+            質問数の多い議員
           </h2>
           <div className="xl:flex-1 xl:overflow-hidden">
             <TopMembers onMemberClick={onMemberClick} />

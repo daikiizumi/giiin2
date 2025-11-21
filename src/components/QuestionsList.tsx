@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { QuestionCard } from "./QuestionCard";
 import { Id } from "../../convex/_generated/dataModel";
 
 interface QuestionsListProps {
@@ -8,178 +9,112 @@ interface QuestionsListProps {
 }
 
 export function QuestionsList({ onQuestionClick }: QuestionsListProps = {}) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSession, setSelectedSession] = useState("");
-  const [sortBy, setSortBy] = useState<"date" | "likes">("date");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
   const questions = useQuery(api.questions.list);
+  const councilMembers = useQuery(api.councilMembers.list, { activeOnly: false });
   const categories = useQuery(api.questions.getCategories);
   const sessionNumbers = useQuery(api.questions.getSessionNumbers);
-  const user = useQuery(api.auth.loggedInUser);
-  const toggleLike = useMutation(api.likes.toggle);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedMember, setSelectedMember] = useState<string>("all");
+  const [selectedSession, setSelectedSession] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "likes">("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const handleLike = async (questionId: Id<"questions">) => {
-    if (!user) {
-      alert("いいねするにはログインが必要です");
-      return;
-    }
-    try {
-      await toggleLike({ questionId });
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
-    }
-  };
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedMember, selectedSession, selectedStatus, sortBy]);
 
-  // タッチイベントの処理を改善
-  const handleTouchInteraction = (questionId: Id<"questions">) => {
-    let touchStartTime = 0;
-    let touchStartY = 0;
-    let touchStartX = 0;
-    let hasMoved = false;
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-      touchStartTime = Date.now();
-      touchStartY = e.touches[0].clientY;
-      touchStartX = e.touches[0].clientX;
-      hasMoved = false;
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const deltaY = Math.abs(currentY - touchStartY);
-      const deltaX = Math.abs(currentX - touchStartX);
-      
-      // 10px以上動いた場合はスクロールと判定
-      if (deltaY > 10 || deltaX > 10) {
-        hasMoved = true;
-      }
-    };
-
-    const handleTouchEnd = (e: React.TouchEvent) => {
-      e.preventDefault();
-      const touchEndTime = Date.now();
-      const touchDuration = touchEndTime - touchStartTime;
-      
-      // スクロールしていない かつ タッチ時間が短い場合のみクリックとして処理
-      if (!hasMoved && touchDuration < 500) {
-        console.log("QuestionsList: Valid touch interaction for question:", questionId);
-        onQuestionClick?.(questionId);
-      }
-    };
-
-    return {
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd,
-    };
-  };
-
-  if (!questions || !categories || !sessionNumbers) {
+  if (!questions || !councilMembers) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 animate-amano-glow"></div>
       </div>
     );
   }
 
-  // フィルタリング処理
-  const filteredQuestions = questions.filter(question => {
-    // 検索クエリでのフィルタリング（タイトルと内容を対象）
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const titleMatch = question.title.toLowerCase().includes(query);
-      const contentMatch = question.content.toLowerCase().includes(query);
-      const memberMatch = question.memberName?.toLowerCase().includes(query);
-      if (!titleMatch && !contentMatch && !memberMatch) {
-        return false;
-      }
-    }
+  // Filter questions
+  const filteredQuestions = questions.filter((question) => {
+    const matchesSearch = 
+      question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.memberName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // カテゴリーでのフィルタリング
-    if (selectedCategory && question.category !== selectedCategory) {
-      return false;
-    }
+    const matchesCategory = selectedCategory === "all" || question.category === selectedCategory;
+    const matchesMember = selectedMember === "all" || question.councilMemberId === selectedMember;
+    const matchesSession = selectedSession === "all" || question.sessionNumber === selectedSession;
+    const matchesStatus = selectedStatus === "all" || question.status === selectedStatus;
     
-    // セッションでのフィルタリング
-    if (selectedSession && question.sessionNumber !== selectedSession) {
-      return false;
-    }
-    
-    return true;
+    return matchesSearch && matchesCategory && matchesMember && matchesSession && matchesStatus;
   });
 
-  // ソート処理
+  // Sort questions
   const sortedQuestions = [...filteredQuestions].sort((a, b) => {
-    if (sortBy === "likes") {
-      return b.likeCount - a.likeCount;
+    switch (sortBy) {
+      case "oldest":
+        return a.sessionDate - b.sessionDate;
+      case "likes":
+        return b.likeCount - a.likeCount;
+      case "newest":
+      default:
+        return b.sessionDate - a.sessionDate;
     }
-    return b.sessionDate - a.sessionDate; // 日付の降順
   });
+
+  // Paginate questions
+  const totalPages = Math.ceil(sortedQuestions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedQuestions = sortedQuestions.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">質問・回答一覧</h2>
-          <p className="text-gray-600 mt-1">
-            {filteredQuestions.length}件の質問が見つかりました
-          </p>
-        </div>
-        
-        {/* View Mode Toggle */}
-        <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === "grid"
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
-          >
-            📱 カード
-          </button>
-          <button
-            onClick={() => setViewMode("list")}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === "list"
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
-          >
-            📋 リスト
-          </button>
-        </div>
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-yellow-400 mb-2 amano-text-glow">
+          ✨ 質問・回答一覧 ✨
+        </h1>
+        <p className="text-gray-300">
+          議会での質問と回答を検索・閲覧できます
+        </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="amano-bg-glass rounded-xl p-6 space-y-4 amano-crystal-border">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">検索</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              🔍 キーワード検索
+            </label>
             <input
               type="text"
-              placeholder="質問タイトル、内容、議員名で検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              placeholder="質問内容、議員名で検索..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="auth-input-field"
             />
           </div>
 
           {/* Category Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">カテゴリー</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              📂 カテゴリ
+            </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="auth-input-field"
             >
-              <option value="">すべてのカテゴリー</option>
-              {categories.map((category) => (
+              <option value="all">全てのカテゴリ</option>
+              {categories?.map((category) => (
                 <option key={category.name} value={category.name}>
                   {category.name} ({category.count})
                 </option>
@@ -187,303 +122,191 @@ export function QuestionsList({ onQuestionClick }: QuestionsListProps = {}) {
             </select>
           </div>
 
-          {/* Session Filter */}
+          {/* Member Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">会議</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              👤 議員
+            </label>
             <select
-              value={selectedSession}
-              onChange={(e) => setSelectedSession(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              value={selectedMember}
+              onChange={(e) => setSelectedMember(e.target.value)}
+              className="auth-input-field"
             >
-              <option value="">すべての会議</option>
-              {sessionNumbers?.map((sessionNumber) => (
-                <option key={sessionNumber} value={sessionNumber}>
-                  {sessionNumber}
+              <option value="all">全ての議員</option>
+              {councilMembers?.map((member) => (
+                <option key={member._id} value={member._id}>
+                  {member.name} ({member.party})
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Session Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              📅 会期
+            </label>
+            <select
+              value={selectedSession}
+              onChange={(e) => setSelectedSession(e.target.value)}
+              className="auth-input-field"
+            >
+              <option value="all">全ての会期</option>
+              {sessionNumbers?.map((session) => (
+                <option key={session} value={session}>
+                  {session}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              📊 ステータス
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="auth-input-field"
+            >
+              <option value="all">全てのステータス</option>
+              <option value="answered">回答済み</option>
+              <option value="pending">回答待ち</option>
+              <option value="archived">アーカイブ</option>
+            </select>
+          </div>
+
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">並び順</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              🔄 並び順
+            </label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "date" | "likes")}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="auth-input-field"
             >
-              <option value="date">日付順</option>
+              <option value="newest">新しい順</option>
+              <option value="oldest">古い順</option>
               <option value="likes">いいね順</option>
             </select>
           </div>
         </div>
 
-        {/* Clear Filters */}
-        {(searchQuery || selectedCategory || selectedSession) && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
+        {/* Results Summary */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-purple-500">
+          <div className="text-gray-300">
+            <span className="text-yellow-400 font-semibold">{filteredQuestions.length}</span> 件の質問が見つかりました
+          </div>
+          {(searchTerm || selectedCategory !== "all" || selectedMember !== "all" || selectedSession !== "all" || selectedStatus !== "all") && (
             <button
               onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("");
-                setSelectedSession("");
+                setSearchTerm("");
+                setSelectedCategory("all");
+                setSelectedMember("all");
+                setSelectedSession("all");
+                setSelectedStatus("all");
+                setSortBy("newest");
               }}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-pink-500 hover:to-red-500 transition-all duration-300 transform hover:scale-105"
             >
-              フィルターをクリア
+              🗑️ フィルターをクリア
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Questions List */}
+      <div className="space-y-4">
+        {paginatedQuestions.length > 0 ? (
+          paginatedQuestions.map((question) => (
+            <QuestionCard 
+              key={question._id} 
+              question={question} 
+              onClick={() => onQuestionClick?.(question._id)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-12 amano-bg-glass rounded-xl amano-crystal-border">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold text-gray-200 mb-2">
+              質問が見つかりませんでした
+            </h3>
+            <p className="text-gray-400 mb-4">
+              検索条件を変更してお試しください
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("all");
+                setSelectedMember("all");
+                setSelectedSession("all");
+                setSelectedStatus("all");
+              }}
+              className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-500 hover:via-purple-500 hover:to-cyan-400 transition-all duration-500 transform hover:scale-105 amano-crystal-border animate-amano-glow"
+            >
+              全ての質問を表示
             </button>
           </div>
         )}
       </div>
 
-      {/* Questions */}
-      {sortedQuestions.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">質問が見つかりません</h3>
-          <p className="text-gray-600">検索条件を変更してお試しください。</p>
-        </div>
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {sortedQuestions.map((question) => {
-            const touchHandlers = handleTouchInteraction(question._id);
-            return (
-              <div
-                key={question._id}
-                onClick={() => {
-                  console.log("QuestionsList: onClick triggered for question:", question._id);
-                  onQuestionClick?.(question._id);
-                }}
-                {...touchHandlers}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                        {question.category}
-                      </span>
-                      <span>📅 {new Date(question.sessionDate).toLocaleDateString("ja-JP")}</span>
-                      <div className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        question.status === 'answered' 
-                          ? 'bg-green-100 text-green-700' 
-                          : question.status === 'archived'
-                          ? 'bg-gray-100 text-gray-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {question.status === 'answered' ? '回答済み' : question.status === 'archived' ? 'アーカイブ' : '回答待ち'}
-                      </div>
-                    </div>
-                    {question.likeCount > 0 && (
-                      <div className="flex items-center space-x-1 text-pink-600 text-xs">
-                        <span>❤️</span>
-                        <span>{question.likeCount}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-gray-800 mb-3 leading-tight">
-                    {question.title}
-                  </h3>
-                  
-                  <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                      {question.category}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {question.memberName?.charAt(0) || "?"}
-                      </div>
-                      <span className="text-gray-600 font-medium">{question.memberName || "不明"}</span>
-                    </div>
-                    {question.sessionNumber && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
-                        {question.sessionNumber}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">
-                    {question.content}
-                  </p>
-
-                  {/* Response */}
-                  {question.responseCount > 0 && (
-                    <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
-                      <h4 className="font-bold text-green-800 mb-2 flex items-center space-x-2">
-                        <span>💬</span>
-                        <span>{question.responseCount}件の回答があります</span>
-                      </h4>
-                      <p className="text-green-700 text-sm">詳細を見るにはクリックしてください</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-3">
-                      {question.youtubeUrl && (
-                        <a
-                          href={question.youtubeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center space-x-1 text-red-600 hover:text-red-800 text-xs font-medium"
-                        >
-                          <span>📺</span>
-                          <span>動画</span>
-                        </a>
-                      )}
-                      {question.documentUrl && (
-                        <a
-                          href={question.documentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-xs font-medium"
-                        >
-                          <span>📄</span>
-                          <span>資料</span>
-                        </a>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(question._id);
-                      }}
-                      disabled={!user}
-                      className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        question.isLiked
-                          ? "bg-pink-100 text-pink-600"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span>{question.isLiked ? "❤️" : "🤍"}</span>
-                      <span>{question.likeCount}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="divide-y divide-gray-200">
-            {sortedQuestions.map((question) => {
-              const touchHandlers = handleTouchInteraction(question._id);
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 py-6">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 disabled:transform-none amano-crystal-border"
+          >
+            ← 前へ
+          </button>
+          
+          <div className="flex space-x-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
               return (
-                <div
-                  key={question._id}
-                  onClick={() => {
-                    console.log("QuestionsList (list): onClick triggered for question:", question._id);
-                    onQuestionClick?.(question._id);
-                  }}
-                  {...touchHandlers}
-                  className="p-6 hover:bg-gray-50 transition-colors cursor-pointer group"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 amano-crystal-border ${
+                    currentPage === pageNum
+                      ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white animate-amano-glow"
+                      : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-blue-600 hover:to-purple-600"
+                  }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          {question.category}
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <span>👤</span>
-                          <span>{question.memberName || "不明"}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <span>📅</span>
-                          <span>{new Date(question.sessionDate).toLocaleDateString("ja-JP")}</span>
-                        </span>
-                        {question.sessionNumber && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-                            {question.sessionNumber}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        question.status === 'answered' 
-                          ? 'bg-green-100 text-green-700' 
-                          : question.status === 'archived'
-                          ? 'bg-gray-100 text-gray-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {question.status === 'answered' ? '回答済み' : question.status === 'archived' ? 'アーカイブ' : '回答待ち'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
-                    {question.title}
-                  </h3>
-
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {question.content}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      {question.responseCount > 0 && (
-                        <span className="flex items-center space-x-1">
-                          <span>💬</span>
-                          <span>{question.responseCount}件の回答</span>
-                        </span>
-                      )}
-                      {question.youtubeUrl && (
-                        <a
-                          href={question.youtubeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
-                        >
-                          <span>📺</span>
-                          <span>動画を見る</span>
-                        </a>
-                      )}
-                      {question.documentUrl && (
-                        <a
-                          href={question.documentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors"
-                        >
-                          <span>📄</span>
-                          <span>資料を見る</span>
-                        </a>
-                      )}
-                      {question.likeCount > 0 && (
-                        <div className="flex items-center space-x-1 text-pink-600">
-                          <span>❤️</span>
-                          <span className="font-medium">{question.likeCount}</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(question._id);
-                      }}
-                      disabled={!user}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        question.isLiked
-                          ? "bg-pink-100 text-pink-700 hover:bg-pink-200"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <span>{question.isLiked ? "❤️" : "🤍"}</span>
-                      <span>いいね</span>
-                    </button>
-                  </div>
-                </div>
+                  {pageNum}
+                </button>
               );
             })}
           </div>
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 disabled:transform-none amano-crystal-border"
+          >
+            次へ →
+          </button>
+        </div>
+      )}
+
+      {/* Page Info */}
+      {totalPages > 1 && (
+        <div className="text-center text-gray-400 text-sm">
+          {totalPages} ページ中 {currentPage} ページ目を表示
+          （全 {filteredQuestions.length} 件中 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredQuestions.length)} 件）
         </div>
       )}
     </div>

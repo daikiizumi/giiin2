@@ -124,33 +124,49 @@ export function RecentQuestions({ onQuestionClick }: RecentQuestionsProps = {}) 
                   </div>
                 </div>
                 
-                <div className="flex justify-between items-start mb-3">
-                  {question.likeCount > 0 && (
-                    <div className="flex items-center space-x-1 text-pink-600 text-xs">
-                      <span>❤️</span>
-                      <span>{question.likeCount}</span>
-                    </div>
-                  )}
+                {/* Member photo and question title section */}
+                <div className="flex items-start space-x-3 mb-3">
+                  <div className="flex-shrink-0">
+                    {question.memberPhotoUrl ? (
+                      <img
+                        src={question.memberPhotoUrl}
+                        alt={question.memberName}
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-sm">
+                        {question.memberName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-gray-800 font-bold mb-1 group-hover:text-blue-600 transition-colors text-sm sm:text-base leading-tight">
+                      {question.title}
+                    </h4>
+                    <p className="text-gray-600 font-medium text-xs sm:text-sm mb-2">{question.memberName}</p>
+                    {question.memberParty && (
+                      <p className="text-gray-500 text-xs">{question.memberParty}</p>
+                    )}
+                  </div>
                 </div>
                 
-                <h4 className="text-gray-800 font-bold mb-2 group-hover:text-blue-600 transition-colors text-sm leading-tight">
-                  {question.title}
-                </h4>
-                
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                      {question.memberName.charAt(0)}
-                    </div>
-                    <span className="text-gray-600 font-medium">{question.memberName}</span>
+                {/* Action buttons section */}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs ml-15 sm:ml-19">
+                  <div className="flex items-center space-x-3">
+                    {question.responseCount > 0 && (
+                      <div className="flex items-center space-x-1 text-green-600">
+                        <span>💬</span>
+                        <span>{question.responseCount}件の回答</span>
+                      </div>
+                    )}
+                    
+                    {question.likeCount > 0 && (
+                      <div className="flex items-center space-x-1 text-pink-600">
+                        <span>❤️</span>
+                        <span>{question.likeCount}</span>
+                      </div>
+                    )}
                   </div>
-                  
-                  {question.responseCount > 0 && (
-                    <div className="flex items-center space-x-1 text-green-600">
-                      <span>💬</span>
-                      <span>{question.responseCount}件の回答</span>
-                    </div>
-                  )}
                   
                   <button
                     onClick={(e) => handleLike(e, question._id)}

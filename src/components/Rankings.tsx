@@ -131,8 +131,8 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">📊 ランキング</h2>
-        <p className="text-gray-600">議員の活動状況や人気の質問をランキング形式でご紹介</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">📊 統計情報</h2>
+        <p className="text-gray-600">議員の活動状況や人気の質問を統計情報としてご紹介</p>
       </div>
 
       {/* Stats Overview */}
@@ -165,7 +165,7 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
             <h3 className="text-xl font-bold text-white flex items-center">
               <span className="mr-2">📊</span>
-              質問数ランキング
+              質問数統計データ
             </h3>
           </div>
           <div className="p-6">
@@ -179,6 +179,19 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
                 >
                   <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${getRankColor(index)} rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg`}>
                     {index < 3 ? getRankIcon(index) : index + 1}
+                  </div>
+                  <div className="flex-shrink-0">
+                    {member.memberPhotoUrl ? (
+                      <img
+                        src={member.memberPhotoUrl}
+                        alt={member.name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
@@ -200,10 +213,10 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
                 <div className="mb-4">
                   <h4 className="text-sm font-bold text-gray-700 flex items-center space-x-2">
                     <span>🏛️</span>
-                    <span>議会役職者（質問権なし）</span>
+                    <span>議会役職者</span>
                   </h4>
                   <p className="text-xs text-gray-500 mt-1">
-                    議長・副議長は議事進行役のため、一般質問を行うことができません
+                    議長・副議長は議事進行役のため、一般質問を行うことは慣例として少ない為除外。
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -215,6 +228,19 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
                     >
                       <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         🏛️
+                      </div>
+                      <div className="flex-shrink-0">
+                        {member.memberPhotoUrl ? (
+                          <img
+                            src={member.memberPhotoUrl}
+                            alt={member.name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                            {member.name.charAt(0)}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
@@ -256,7 +282,7 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
           <div className="bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4">
             <h3 className="text-xl font-bold text-white flex items-center">
               <span className="mr-2">❤️</span>
-              いいね数ランキング
+              いいね数統計データ
             </h3>
           </div>
           <div className="p-6">
@@ -269,6 +295,19 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
                 >
                   <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${getRankColor(index)} rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg`}>
                     {index < 3 ? getRankIcon(index) : index + 1}
+                  </div>
+                  <div className="flex-shrink-0">
+                    {member.memberPhotoUrl ? (
+                      <img
+                        src={member.memberPhotoUrl}
+                        alt={member.name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-800 group-hover:text-pink-600 transition-colors">
@@ -304,7 +343,7 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
         <div className="bg-gradient-to-r from-purple-500 to-indigo-500 px-6 py-4">
           <h3 className="text-xl font-bold text-white flex items-center">
             <span className="mr-2">🏛️</span>
-            所属別ランキング
+            所属別統計データ
           </h3>
         </div>
         <div className="p-6">
@@ -374,7 +413,7 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
         <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
           <h3 className="text-xl font-bold text-white flex items-center">
             <span className="mr-2">🔥</span>
-            人気の質問ランキング
+            人気の質問統計データ
           </h3>
         </div>
         <div className="p-6">

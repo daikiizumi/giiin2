@@ -89,18 +89,18 @@ export function CouncilMemberDetail({ memberId, onBack, onQuestionClick }: Counc
                 {member.politicalParty && (
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 min-w-0 flex-shrink-0">政党:</span>
-                    <span className="font-medium">{member.politicalParty}</span>
+                    <span className="text-gray-600 min-w-0 flex-shrink-0">{member.politicalParty}</span>
                   </div>
                 )}
                 {member.electionCount && (
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 min-w-0 flex-shrink-0">当選回数:</span>
-                    <span className="font-medium">{member.electionCount}回</span>
+                    <span className="text-gray-600 min-w-0 flex-shrink-0">{member.electionCount}回</span>
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-600 min-w-0 flex-shrink-0">任期:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 min-w-0 flex-shrink-0">
                     {new Date(member.termStart).getFullYear()}年〜
                     {member.termEnd ? new Date(member.termEnd).getFullYear() + "年" : "現在"}
                   </span>

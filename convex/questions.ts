@@ -29,10 +29,19 @@ export const list = query({
         const likeCount = likes.length;
         const isLiked = userId ? likes.some(like => like.userId === userId) : false;
 
+        // Get member photo URL
+        let memberPhotoUrl = null;
+        if (member?.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member?.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+
         return {
           ...question,
           memberName: member?.name || "不明",
           memberParty: member?.party,
+          memberPhotoUrl,
           responseCount: responses.length,
           likeCount,
           isLiked,
@@ -56,6 +65,7 @@ export const getByCouncilMember = query({
 
     const questionsWithDetails = await Promise.all(
       questions.map(async (question) => {
+        const member = await ctx.db.get(question.councilMemberId);
         const responses = await ctx.db
           .query("responses")
           .withIndex("by_question", (q) => q.eq("questionId", question._id))
@@ -70,8 +80,19 @@ export const getByCouncilMember = query({
         const likeCount = likes.length;
         const isLiked = userId ? likes.some(like => like.userId === userId) : false;
 
+        // Get member photo URL
+        let memberPhotoUrl = null;
+        if (member?.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member?.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+
         return {
           ...question,
+          memberName: member?.name || "不明",
+          memberParty: member?.party,
+          memberPhotoUrl,
           responseCount: responses.length,
           likeCount,
           isLiked,
@@ -105,14 +126,224 @@ export const getById = query({
     const likeCount = likes.length;
     const isLiked = userId ? likes.some(like => like.userId === userId) : false;
 
+    // Get member photo URL
+    let memberPhotoUrl = null;
+    if (member?.photoId) {
+      memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+    } else if (member?.photoUrl) {
+      memberPhotoUrl = member.photoUrl;
+    }
+
     return {
       ...question,
       memberName: member?.name || "不明",
       memberParty: member?.party,
+      memberPhotoUrl,
       responses,
       likeCount,
       isLiked,
     };
+  },
+});
+
+export const getRecent = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const limit = args.limit || 5;
+    
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_session_date")
+      .order("desc")
+      .take(limit);
+
+    const questionsWithDetails = await Promise.all(
+      questions.map(async (question) => {
+        const member = await ctx.db.get(question.councilMemberId);
+        const responses = await ctx.db
+          .query("responses")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+
+        // Get like count and user's like status
+        const likes = await ctx.db
+          .query("likes")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+        
+        const likeCount = likes.length;
+        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
+
+        // Get member photo URL
+        let memberPhotoUrl = null;
+        if (member?.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member?.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+
+        return {
+          ...question,
+          memberName: member?.name || "不明",
+          memberParty: member?.party,
+          memberPhotoUrl,
+          responseCount: responses.length,
+          likeCount,
+          isLiked,
+        };
+      })
+    );
+
+    return questionsWithDetails;
+  },
+});
+
+export const getPopular = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const limit = args.limit || 5;
+    
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_session_date")
+      .order("desc")
+      .take(50); // Get more questions to sort by likes
+
+    const questionsWithDetails = await Promise.all(
+      questions.map(async (question) => {
+        const member = await ctx.db.get(question.councilMemberId);
+        const responses = await ctx.db
+          .query("responses")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+
+        // Get like count and user's like status
+        const likes = await ctx.db
+          .query("likes")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+        
+        const likeCount = likes.length;
+        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
+
+        // Get member photo URL
+        let memberPhotoUrl = null;
+        if (member?.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member?.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+
+        return {
+          ...question,
+          memberName: member?.name || "不明",
+          memberParty: member?.party,
+          memberPhotoUrl,
+          responseCount: responses.length,
+          likeCount,
+          isLiked,
+        };
+      })
+    );
+
+    // Sort by like count and take the limit
+    return questionsWithDetails
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, limit);
+  },
+});
+
+export const getTopLikedQuestions = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const limit = args.limit || 10;
+    
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_session_date")
+      .order("desc")
+      .take(100); // Get more questions to sort by likes
+
+    const questionsWithDetails = await Promise.all(
+      questions.map(async (question) => {
+        const member = await ctx.db.get(question.councilMemberId);
+        const responses = await ctx.db
+          .query("responses")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+
+        // Get like count and user's like status
+        const likes = await ctx.db
+          .query("likes")
+          .withIndex("by_question", (q) => q.eq("questionId", question._id))
+          .collect();
+        
+        const likeCount = likes.length;
+        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
+
+        // Get member photo URL
+        let memberPhotoUrl = null;
+        if (member?.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member?.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+
+        return {
+          ...question,
+          memberName: member?.name || "不明",
+          memberParty: member?.party,
+          memberPhotoUrl,
+          responseCount: responses.length,
+          likeCount,
+          isLiked,
+        };
+      })
+    );
+
+    // Sort by like count and take the limit
+    return questionsWithDetails
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, limit);
+  },
+});
+
+export const getCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    const questions = await ctx.db.query("questions").collect();
+    const categoryCount: Record<string, number> = {};
+    
+    questions.forEach(question => {
+      categoryCount[question.category] = (categoryCount[question.category] || 0) + 1;
+    });
+    
+    return Object.entries(categoryCount).map(([name, count]) => ({
+      name,
+      count
+    }));
+  },
+});
+
+export const getSessionNumbers = query({
+  args: {},
+  handler: async (ctx) => {
+    const questions = await ctx.db.query("questions").collect();
+    const sessionNumbers = [...new Set(questions.map(q => q.sessionNumber).filter(Boolean))];
+    return sessionNumbers.sort();
+  },
+});
+
+export const getResponses = query({
+  args: { questionId: v.id("questions") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("responses")
+      .withIndex("by_question", (q) => q.eq("questionId", args.questionId))
+      .collect();
   },
 });
 
@@ -159,7 +390,7 @@ export const update = mutation({
     }
 
     const { id, ...updates } = args;
-    return await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, updates);
   },
 });
 
@@ -171,149 +402,7 @@ export const remove = mutation({
       throw new Error("認証が必要です");
     }
 
-    return await ctx.db.delete(args.id);
-  },
-});
-
-export const getRecent = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    const limit = args.limit || 5;
-    
-    const questions = await ctx.db
-      .query("questions")
-      .withIndex("by_session_date")
-      .order("desc")
-      .take(limit);
-
-    const questionsWithDetails = await Promise.all(
-      questions.map(async (question) => {
-        const member = await ctx.db.get(question.councilMemberId);
-        const responses = await ctx.db
-          .query("responses")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-
-        // Get like count and user's like status
-        const likes = await ctx.db
-          .query("likes")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-        
-        const likeCount = likes.length;
-        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
-
-        return {
-          ...question,
-          memberName: member?.name || "不明",
-          memberParty: member?.party,
-          responseCount: responses.length,
-          likeCount,
-          isLiked,
-        };
-      })
-    );
-
-    return questionsWithDetails;
-  },
-});
-
-export const getPopular = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    const limit = args.limit || 5;
-    
-    const questions = await ctx.db
-      .query("questions")
-      .withIndex("by_session_date")
-      .order("desc")
-      .take(50); // Get more questions to sort by likes
-
-    const questionsWithDetails = await Promise.all(
-      questions.map(async (question) => {
-        const member = await ctx.db.get(question.councilMemberId);
-        const responses = await ctx.db
-          .query("responses")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-
-        // Get like count and user's like status
-        const likes = await ctx.db
-          .query("likes")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-        
-        const likeCount = likes.length;
-        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
-
-        return {
-          ...question,
-          memberName: member?.name || "不明",
-          memberParty: member?.party,
-          responseCount: responses.length,
-          likeCount,
-          isLiked,
-        };
-      })
-    );
-
-    // Sort by like count and return top results
-    return questionsWithDetails
-      .sort((a, b) => b.likeCount - a.likeCount)
-      .slice(0, limit);
-  },
-});
-
-export const getStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const questions = await ctx.db.query("questions").collect();
-    const responses = await ctx.db.query("responses").collect();
-    const members = await ctx.db.query("councilMembers").collect();
-    
-    return {
-      totalQuestions: questions.length,
-      totalResponses: responses.length,
-      totalMembers: members.filter(m => m.isActive).length,
-      answeredQuestions: questions.filter(q => q.status === "answered").length,
-    };
-  },
-});
-
-export const getCategories = query({
-  args: {},
-  handler: async (ctx) => {
-    const questions = await ctx.db.query("questions").collect();
-    const categoryCount: Record<string, number> = {};
-    
-    questions.forEach(q => {
-      categoryCount[q.category] = (categoryCount[q.category] || 0) + 1;
-    });
-    
-    return Object.entries(categoryCount)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  },
-});
-
-export const getSessionNumbers = query({
-  args: {},
-  handler: async (ctx) => {
-    const questions = await ctx.db.query("questions").collect();
-    const sessionNumbers = [...new Set(questions.map(q => q.sessionNumber).filter(Boolean))];
-    return sessionNumbers.sort();
-  },
-});
-
-export const getResponses = query({
-  args: { questionId: v.id("questions") },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("responses")
-      .withIndex("by_question", (q) => q.eq("questionId", args.questionId))
-      .collect();
+    await ctx.db.delete(args.id);
   },
 });
 
@@ -331,15 +420,30 @@ export const addResponse = mutation({
       throw new Error("認証が必要です");
     }
 
-    const responseId = await ctx.db.insert("responses", {
+    return await ctx.db.insert("responses", {
       ...args,
       responseDate: Date.now(),
     });
+  },
+});
 
-    // Update question status to answered
-    await ctx.db.patch(args.questionId, { status: "answered" as const });
+export const updateResponse = mutation({
+  args: {
+    id: v.id("responses"),
+    content: v.optional(v.string()),
+    respondentTitle: v.optional(v.string()),
+    department: v.optional(v.string()),
+    documentUrl: v.optional(v.string()),
+    responseDate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("認証が必要です");
+    }
 
-    return responseId;
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, updates);
   },
 });
 
@@ -351,110 +455,23 @@ export const deleteResponse = mutation({
       throw new Error("認証が必要です");
     }
 
-    return await ctx.db.delete(args.id);
+    await ctx.db.delete(args.id);
   },
 });
 
-export const getTopLikedQuestions = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    const limit = args.limit || 10;
-    
-    const questions = await ctx.db
-      .query("questions")
-      .withIndex("by_session_date")
-      .order("desc")
-      .take(100); // Get more questions to sort by likes
-
-    const questionsWithDetails = await Promise.all(
-      questions.map(async (question) => {
-        const member = await ctx.db.get(question.councilMemberId);
-        const responses = await ctx.db
-          .query("responses")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-
-        // Get like count and user's like status
-        const likes = await ctx.db
-          .query("likes")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-        
-        const likeCount = likes.length;
-        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
-
-        return {
-          ...question,
-          memberName: member?.name || "不明",
-          memberParty: member?.party,
-          responseCount: responses.length,
-          likeCount,
-          isLiked,
-        };
-      })
-    );
-
-    // Sort by like count and return top results
-    return questionsWithDetails
-      .sort((a, b) => b.likeCount - a.likeCount)
-      .slice(0, limit);
-  },
-});
-
-export const listPaginated = query({
-  args: {
-    page: v.optional(v.number()),
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    const page = args.page || 1;
-    const limit = args.limit || 20;
-    const offset = (page - 1) * limit;
-    
-    const allQuestions = await ctx.db
-      .query("questions")
-      .withIndex("by_session_date")
-      .order("desc")
-      .collect();
-
-    const totalCount = allQuestions.length;
-    const questions = allQuestions.slice(offset, offset + limit);
-
-    const questionsWithDetails = await Promise.all(
-      questions.map(async (question) => {
-        const member = await ctx.db.get(question.councilMemberId);
-        const responses = await ctx.db
-          .query("responses")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-
-        // Get like count and user's like status
-        const likes = await ctx.db
-          .query("likes")
-          .withIndex("by_question", (q) => q.eq("questionId", question._id))
-          .collect();
-        
-        const likeCount = likes.length;
-        const isLiked = userId ? likes.some(like => like.userId === userId) : false;
-
-        return {
-          ...question,
-          memberName: member?.name || "不明",
-          memberParty: member?.party,
-          responseCount: responses.length,
-          likeCount,
-          isLiked,
-        };
-      })
-    );
+export const getStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const questions = await ctx.db.query("questions").collect();
+    const totalQuestions = questions.length;
+    const answeredQuestions = questions.filter(q => q.status === "answered").length;
+    const pendingQuestions = questions.filter(q => q.status === "pending").length;
 
     return {
-      questions: questionsWithDetails,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalQuestions,
+      answeredQuestions,
+      pendingQuestions,
+      answerRate: totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0,
     };
   },
 });

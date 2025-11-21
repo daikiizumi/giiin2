@@ -115,16 +115,16 @@ export default function App() {
   };
 
   const tabs = [
-    { id: "dashboard", label: "ダッシュボード", icon: "🏠", shortLabel: "ホーム" },
+    { id: "dashboard", label: "トップページ", icon: "🏰", shortLabel: "ホーム" },
     { id: "members", label: "議員一覧", icon: "👥", shortLabel: "議員" },
-    { id: "questions", label: "質問・回答", icon: "❓", shortLabel: "質問" },
-    { id: "rankings", label: "ランキング", icon: "🏆", shortLabel: "順位" },
-    { id: "news", label: "お知らせ", icon: "📢", shortLabel: "お知らせ" },
+    { id: "questions", label: "質問・回答", icon: "📜", shortLabel: "質問" },
+    { id: "rankings", label: "統計情報", icon: "🔮", shortLabel: "統計" },
+    { id: "news", label: "お知らせ", icon: "✨", shortLabel: "お知らせ" },
   ];
 
   // Add admin tab only for admin users
   if (isAdmin) {
-    tabs.push({ id: "admin", label: "管理画面", icon: "⚙️", shortLabel: "管理" });
+    tabs.push({ id: "admin", label: "管理画面", icon: "👑", shortLabel: "管理" });
   }
 
   const renderContent = () => {
@@ -152,13 +152,16 @@ export default function App() {
             <div className="space-y-4 sm:space-y-6">
               <button
                 onClick={handleBackToQuestions}
-                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium transition-colors text-sm sm:text-base"
+                className="flex items-center space-x-2 text-yellow-400 hover:text-cyan-300 font-medium transition-all duration-300 text-sm sm:text-base amano-text-glow"
               >
                 <span>←</span>
                 <span className="hidden sm:inline">{selectedMemberId ? "議員詳細に戻る" : "質問一覧に戻る"}</span>
                 <span className="sm:hidden">戻る</span>
               </button>
-              <QuestionCard question={selectedQuestion} index={0} />
+              <QuestionCard question={{
+                ...selectedQuestion,
+                responseCount: selectedQuestion.responses?.length || 0
+              }} />
             </div>
           );
         }
@@ -176,24 +179,24 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
+    <div className="min-h-screen amano-bg-primary">
       {/* Loading Screen for LINE browser compatibility */}
       {isLoading && (
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div className="fixed inset-0 amano-bg-secondary z-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">読み込み中...</p>
+            <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4 animate-amano-glow"></div>
+            <p className="text-gray-300 amano-text-glow">読み込み中...</p>
           </div>
         </div>
       )}
       
       {/* Header */}
-      <header className="bg-white shadow-lg border-b-4 border-orange-500 sticky top-0 z-40">
+      <header className="amano-bg-glass shadow-2xl border-b-4 border-yellow-400 sticky top-0 z-40 amano-crystal-border">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
             {/* Logo */}
             <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden amano-card-glow animate-amano-float">
                 <img 
                   src="https://i.gyazo.com/b4bbdbe8695db5c6bfbc110001f0c855.png" 
                   alt="GIIIN/ギイーン ロゴ" 
@@ -201,10 +204,10 @@ export default function App() {
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent truncate">
+                <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent truncate amano-text-glow">
                   GIIIN/ギイーン
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">市民の声を届ける議会活動</p>
+                <p className="text-xs sm:text-sm text-gray-300 hidden sm:block">市民の声を届ける議会活動</p>
               </div>
             </div>
 
@@ -212,17 +215,17 @@ export default function App() {
             <div className="flex items-center flex-shrink-0">
               {user === undefined ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">読み込み中...</span>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin animate-amano-glow"></div>
+                  <span className="text-xs sm:text-sm text-gray-300 hidden sm:inline">読み込み中...</span>
                 </div>
               ) : user ? (
                 <div className="flex items-center space-x-2 sm:space-x-4">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-gray-800 truncate max-w-32">
+                    <p className="text-sm font-medium text-gray-200 truncate max-w-32 amano-text-glow">
                       {user.name || user.email || "ユーザー"}
                     </p>
                     {userRole && userRole !== "user" && (
-                      <p className="text-xs text-red-600 font-medium">
+                      <p className="text-xs text-yellow-400 font-medium amano-text-glow">
                         {userRole === "superAdmin" ? "運営者" : "編集者"}
                       </p>
                     )}
@@ -232,7 +235,7 @@ export default function App() {
               ) : (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-2 sm:px-6 sm:py-2 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 text-xs sm:text-sm"
+                  className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white px-3 py-2 sm:px-6 sm:py-2 rounded-lg font-medium hover:from-yellow-500 hover:via-purple-500 hover:to-cyan-400 transition-all duration-500 transform hover:scale-105 text-xs sm:text-sm amano-crystal-border animate-amano-glow"
                 >
                   <span className="hidden sm:inline">ログイン/新規登録</span>
                   <span className="sm:hidden">ログイン</span>
@@ -244,17 +247,17 @@ export default function App() {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-white shadow-md border-b border-gray-200 sticky top-16 sm:top-20 z-30">
+      <nav className="amano-bg-glass shadow-lg border-b border-purple-500 sticky top-16 sm:top-20 z-30">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex space-x-1 overflow-x-auto py-2 sm:py-4 scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center sm:space-x-1 sm:space-x-2 px-2 py-2 sm:px-6 sm:py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 transform hover:scale-105 whitespace-nowrap flex-shrink-0 ${
+                className={`flex items-center justify-center sm:space-x-1 sm:space-x-2 px-2 py-2 sm:px-6 sm:py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-500 transform hover:scale-105 whitespace-nowrap flex-shrink-0 relative ${
                   activeTab === tab.id
-                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg"
-                    : "text-gray-600 bg-gray-100 hover:bg-gray-200"
+                    ? "bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white shadow-lg amano-card-glow amano-sparkle"
+                    : "text-gray-300 amano-bg-card hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600"
                 }`}
               >
                 <span className="text-lg sm:text-lg">{tab.icon}</span>
@@ -267,31 +270,34 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
-        {renderContent()}
+        <div className="animate-fadeIn">
+          {renderContent()}
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 sm:py-12 mt-8 sm:mt-16">
+      <footer className="amano-bg-secondary text-white py-8 sm:py-12 mt-8 sm:mt-16 border-t-4 border-yellow-400">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="text-center">
             <div className="flex justify-center items-center space-x-3 mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center overflow-hidden amano-card-glow animate-amano-float">
                 <img 
                   src="https://i.gyazo.com/b4bbdbe8695db5c6bfbc110001f0c855.png" 
                   alt="GIIIN/ギイーン ロゴ" 
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h3 className="text-lg sm:text-xl font-bold">GIIIN/ギイーン</h3>
+              <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent amano-text-glow">GIIIN/ギイーン</h3>
             </div>
-            <p className="text-gray-400 mb-4 text-sm sm:text-base px-4">
+            <p className="text-gray-300 mb-4 text-sm sm:text-base px-4">
               市民の皆様の声を市政に反映させるため、議員の活動を透明化し、
               <span className="hidden sm:inline"><br /></span>
-              より身近で開かれた議会を目指しています。
+              より身近で開かれた議会をめざそう。
             </p>
-            <div className="text-xs sm:text-sm text-gray-500 px-4">
-              <p>※ このサイトはデモ版です。実際のデータは各自治体議会の公式情報をご確認ください。</p>
-              <p className="mt-2">© 2024 GIIIN/ギイーン 議員活動可視化システム</p>
+            <div className="text-xs sm:text-sm text-gray-400 px-4">
+              <p>※ このサイトは三原市非公認です。実際のデータは各自治体議会の公式情報をご確認ください。</p>
+              <p className="mt-2">お問い合わせ：info@giiin.info</p>
+              <p className="mt-2">© 2025 GIIIN/ギイーン 議員活動可視化システム</p>
             </div>
           </div>
         </div>

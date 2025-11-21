@@ -11,7 +11,26 @@ export const list = query({
       query = query.filter((q) => q.eq(q.field("isActive"), true));
     }
     
-    return await query.order("desc").collect();
+    const members = await query.order("desc").collect();
+    
+    // 各議員の写真URLを取得
+    const membersWithPhotos = await Promise.all(
+      members.map(async (member) => {
+        let memberPhotoUrl = null;
+        if (member.photoId) {
+          memberPhotoUrl = await ctx.storage.getUrl(member.photoId);
+        } else if (member.photoUrl) {
+          memberPhotoUrl = member.photoUrl;
+        }
+        
+        return {
+          ...member,
+          memberPhotoUrl,
+        };
+      })
+    );
+    
+    return membersWithPhotos;
   },
 });
 

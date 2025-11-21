@@ -27,7 +27,7 @@ try {
   createRoot(rootElement).render(
     <ConvexAuthProvider client={convex}>
       <App />
-      <Toaster position="top-right" richColors />
+      <Toaster position="bottom-right" richColors />
     </ConvexAuthProvider>,
   );
 } catch (error) {
