@@ -1,1 +1,2 @@
-npm run dev
+#!/bin/bash
+echo "Deploying enhanced response formatting..."

@@ -1,17 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   * {
-    border-color: #e5e7eb; /* fallback for @apply border-gray-200 */
+    border-color: #4c1d95; /* 深い紫のボーダー */
   }
   body {
-    background-color: #f9fafb; /* fallback for @apply bg-gray-50 */
-    color: #111827; /* fallback for @apply text-gray-900 */
-    font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0f0c29 0%, #24243e 25%, #302b63 50%, #0f3460 75%, #0a2472 100%);
+    color: #f8fafc;
+    font-family: 'Noto Sans JP', 'Cinzel', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
   }
+}
+
+/* 天野喜孝風カラーパレット */
+:root {
+  --amano-deep-purple: #1a0b3d;
+  --amano-royal-purple: #4c1d95;
+  --amano-mystic-blue: #1e3a8a;
+  --amano-ethereal-cyan: #0891b2;
+  --amano-celestial-gold: #f59e0b;
+  --amano-divine-silver: #e5e7eb;
+  --amano-crimson: #dc2626;
+  --amano-emerald: #059669;
+  --amano-twilight: #374151;
+  --amano-mist: rgba(248, 250, 252, 0.1);
 }
 
 @layer utilities {
@@ -51,40 +67,212 @@
   }
 }
 
-/* Auth form styles */
+/* 天野喜孝風グラデーション背景 */
+.amano-bg-primary {
+  background: linear-gradient(135deg, 
+    var(--amano-deep-purple) 0%, 
+    var(--amano-royal-purple) 25%, 
+    var(--amano-mystic-blue) 50%, 
+    var(--amano-ethereal-cyan) 75%, 
+    var(--amano-celestial-gold) 100%);
+}
+
+.amano-bg-secondary {
+  background: linear-gradient(45deg, 
+    rgba(26, 11, 61, 0.9) 0%, 
+    rgba(76, 29, 149, 0.8) 50%, 
+    rgba(30, 58, 138, 0.9) 100%);
+}
+
+.amano-bg-card {
+  background: linear-gradient(135deg, 
+    rgba(248, 250, 252, 0.05) 0%, 
+    rgba(76, 29, 149, 0.1) 25%, 
+    rgba(30, 58, 138, 0.08) 75%, 
+    rgba(8, 145, 178, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(248, 250, 252, 0.1);
+}
+
+.amano-bg-glass {
+  background: rgba(248, 250, 252, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(248, 250, 252, 0.08);
+}
+
+/* Auth form styles - 天野喜孝風 */
 .gap-form-field {
   gap: 1rem;
 }
 
 .auth-input-field {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  @apply w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent;
+  background: rgba(248, 250, 252, 0.05);
+  border-color: var(--amano-royal-purple);
+  color: #f8fafc;
+  backdrop-filter: blur(10px);
+}
+
+.auth-input-field:focus {
+  ring-color: var(--amano-celestial-gold);
+  border-color: var(--amano-celestial-gold);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.auth-input-field::placeholder {
+  color: rgba(248, 250, 252, 0.6);
+}
+
+/* セレクトボックス（リストボックス）の天野喜孝風スタイル */
+.auth-input-field select,
+select.auth-input-field {
+  background: linear-gradient(135deg, 
+    rgba(248, 250, 252, 0.05) 0%, 
+    rgba(76, 29, 149, 0.1) 25%, 
+    rgba(30, 58, 138, 0.08) 75%, 
+    rgba(8, 145, 178, 0.05) 100%);
+  backdrop-filter: blur(15px);
+  border: 2px solid var(--amano-royal-purple);
+  color: #f8fafc;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  transition: all 0.3s ease-in-out;
+}
+
+.auth-input-field select:hover,
+select.auth-input-field:hover {
+  border-color: var(--amano-celestial-gold);
+  background: linear-gradient(135deg, 
+    rgba(245, 158, 11, 0.1) 0%, 
+    rgba(76, 29, 149, 0.15) 25%, 
+    rgba(30, 58, 138, 0.12) 75%, 
+    rgba(8, 145, 178, 0.08) 100%);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.auth-input-field select:focus,
+select.auth-input-field:focus {
+  border-color: var(--amano-celestial-gold);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.4), 0 0 40px rgba(76, 29, 149, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(245, 158, 11, 0.15) 0%, 
+    rgba(76, 29, 149, 0.2) 25%, 
+    rgba(30, 58, 138, 0.15) 75%, 
+    rgba(8, 145, 178, 0.1) 100%);
 }
 
 .auth-button {
-  @apply w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply w-full py-3 rounded-lg font-bold transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  background: linear-gradient(135deg, 
+    var(--amano-royal-purple) 0%, 
+    var(--amano-mystic-blue) 50%, 
+    var(--amano-ethereal-cyan) 100%);
+  color: #f8fafc;
+  border: 1px solid var(--amano-celestial-gold);
+  box-shadow: 0 4px 15px rgba(76, 29, 149, 0.4);
+}
+
+.auth-button:hover {
+  background: linear-gradient(135deg, 
+    var(--amano-celestial-gold) 0%, 
+    var(--amano-royal-purple) 50%, 
+    var(--amano-mystic-blue) 100%);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+  transform: translateY(-2px);
+}
+
+/* セレクトボックスのオプション（ドロップダウン）スタイル */
+.auth-input-field select option,
+select.auth-input-field option {
+  background: var(--amano-deep-purple);
+  color: #f8fafc;
+  padding: 8px 12px;
+  border: none;
+}
+
+.auth-input-field select option:hover,
+select.auth-input-field option:hover {
+  background: linear-gradient(135deg, var(--amano-royal-purple), var(--amano-mystic-blue));
+  color: var(--amano-celestial-gold);
+}
+
+.auth-input-field select option:checked,
+select.auth-input-field option:checked {
+  background: linear-gradient(135deg, var(--amano-celestial-gold), var(--amano-ethereal-cyan));
+  color: var(--amano-deep-purple);
+  font-weight: 600;
 }
 
 .text-secondary {
-  @apply text-gray-600;
+  @apply text-gray-300;
 }
 
 .text-primary {
-  @apply text-blue-600;
+  color: var(--amano-celestial-gold);
 }
 
 .text-primary-hover {
-  @apply text-blue-800;
+  color: var(--amano-ethereal-cyan);
 }
 
-/* Custom animations */
-@keyframes fadeIn {
+/* 天野喜孝風アニメーション */
+@keyframes amanoFadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px) scale(0.95);
+    filter: blur(5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes amanoGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.6), 0 0 60px rgba(76, 29, 149, 0.4);
+  }
+}
+
+@keyframes amanoFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+}
+
+@keyframes amanoShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes amanoSparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -136,8 +324,20 @@
   }
 }
 
+@keyframes highlight {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(245, 158, 11, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 .animate-fadeIn {
-  animation: fadeIn 0.6s ease-out;
+  animation: amanoFadeIn 0.8s ease-out;
 }
 
 .animate-slideDown {
@@ -157,7 +357,109 @@
   animation: bounce 2s infinite;
 }
 
-/* Gradient text utilities */
+.animate-highlight {
+  animation: highlight 2s ease-in-out;
+}
+
+.animate-amano-glow {
+  animation: amanoGlow 3s ease-in-out infinite;
+}
+
+.animate-amano-float {
+  animation: amanoFloat 6s ease-in-out infinite;
+}
+
+.animate-amano-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: amanoShimmer 2s infinite;
+}
+
+/* Enhanced response content styling - 天野喜孝風 */
+.response-content {
+  line-height: 1.8;
+  color: #f8fafc;
+}
+
+.response-content span {
+  transition: all 0.3s ease-in-out;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.response-content span:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(76, 29, 149, 0.2));
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Question content highlighting - 天野喜孝風 */
+.question-highlight {
+  position: relative;
+  display: inline;
+  color: var(--amano-celestial-gold);
+}
+
+.question-highlight::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--amano-celestial-gold), var(--amano-ethereal-cyan));
+  transform: scaleX(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+.question-highlight:hover::before {
+  transform: scaleX(1);
+}
+
+/* Response tag styles - 天野喜孝風 */
+.response-tag {
+  display: inline-block;
+  margin: 2px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  transition: all 0.3s ease-in-out;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.response-tag:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+}
+
+.response-tag-question {
+  background: linear-gradient(135deg, var(--amano-mystic-blue), var(--amano-royal-purple));
+  color: #f8fafc;
+  border-color: var(--amano-celestial-gold);
+}
+
+.response-tag-answer {
+  background: linear-gradient(135deg, var(--amano-emerald), var(--amano-ethereal-cyan));
+  color: #f8fafc;
+  border-color: var(--amano-celestial-gold);
+}
+
+.response-tag-speaker {
+  background: linear-gradient(135deg, var(--amano-celestial-gold), var(--amano-crimson));
+  color: #f8fafc;
+  border-color: var(--amano-divine-silver);
+}
+
+.response-tag-number {
+  background: linear-gradient(135deg, var(--amano-royal-purple), var(--amano-mystic-blue));
+  color: #f8fafc;
+  border-color: var(--amano-celestial-gold);
+}
+
+/* Gradient text utilities - 天野喜孝風 */
 .bg-gradient-to-r {
   background: linear-gradient(to right, var(--tw-gradient-stops));
 }
@@ -171,26 +473,27 @@
   color: transparent;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - 天野喜孝風 */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+  background: var(--amano-deep-purple);
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
-  border-radius: 4px;
+  background: linear-gradient(to bottom, var(--amano-celestial-gold), var(--amano-royal-purple));
+  border-radius: 6px;
+  border: 2px solid var(--amano-deep-purple);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #2563eb, #7c3aed);
+  background: linear-gradient(to bottom, var(--amano-ethereal-cyan), var(--amano-celestial-gold));
 }
 
-/* Hover effects */
+/* Hover effects - 天野喜孝風 */
 .group:hover .group-hover\:scale-105 {
   transform: scale(1.05);
 }
@@ -203,7 +506,7 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Loading spinner enhancement */
+/* Loading spinner enhancement - 天野喜孝風 */
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -217,12 +520,12 @@
   }
 }
 
-/* Card hover effects */
+/* Card hover effects - 天野喜孝風 */
 .hover\:shadow-2xl:hover {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.4), 0 0 40px rgba(76, 29, 149, 0.3);
 }
 
-/* Button hover effects */
+/* Button hover effects - 天野喜孝風 */
 .transform {
   transform: translateZ(0);
 }
@@ -245,16 +548,21 @@
   transition-duration: 300ms;
 }
 
-/* Custom gradient backgrounds */
+.duration-500 {
+  transition-duration: 500ms;
+}
+
+/* Custom gradient backgrounds - 天野喜孝風 */
 .bg-gradient-to-br {
   background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
 }
 
-/* Enhanced focus states */
+/* Enhanced focus states - 天野喜孝風 */
 button:focus,
 a:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--amano-celestial-gold);
   outline-offset: 2px;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
 }
 
 /* Mobile responsive improvements */
@@ -277,6 +585,13 @@ a:focus {
   /* Responsive text sizes */
   .text-responsive {
     font-size: clamp(0.875rem, 2.5vw, 1rem);
+  }
+  
+  /* Mobile response tags */
+  .response-tag {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    margin: 1px;
   }
 }
 
@@ -309,7 +624,7 @@ a:focus {
 
 /* Fallback for gradient backgrounds in older browsers */
 .bg-gradient-fallback {
-  background: #3b82f6; /* fallback color */
+  background: var(--amano-royal-purple);
 }
 
 /* Enhanced mobile form styling for LINE browser */
@@ -317,7 +632,7 @@ a:focus {
   .auth-input-field {
     padding: 12px 16px;
     font-size: 16px; /* Prevent zoom on iOS */
-    border: 2px solid #d1d5db;
+    border: 2px solid var(--amano-royal-purple);
     border-radius: 8px;
   }
   
@@ -332,4 +647,72 @@ a:focus {
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* Enhanced response content display - 天野喜孝風 */
+.response-content-enhanced {
+  background: linear-gradient(135deg, 
+    rgba(248, 250, 252, 0.05) 0%, 
+    rgba(76, 29, 149, 0.1) 50%, 
+    rgba(30, 58, 138, 0.05) 100%);
+  border-left: 4px solid var(--amano-celestial-gold);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  box-shadow: 0 4px 15px rgba(76, 29, 149, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.response-content-enhanced:hover {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4), 0 0 20px rgba(76, 29, 149, 0.3);
+  transform: translateY(-2px);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Improved readability for formatted content */
+.formatted-content {
+  line-height: 1.7;
+  word-spacing: 0.1em;
+  color: #f8fafc;
+}
+
+.formatted-content span {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 天野喜孝風の特殊エフェクト */
+.amano-crystal-border {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--amano-deep-purple), var(--amano-deep-purple)) padding-box,
+              linear-gradient(45deg, var(--amano-celestial-gold), var(--amano-ethereal-cyan), var(--amano-royal-purple)) border-box;
+}
+
+.amano-text-glow {
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.amano-card-glow {
+  box-shadow: 0 0 20px rgba(76, 29, 149, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
+}
+
+/* パーティクルエフェクト風の装飾 */
+.amano-sparkle::before {
+  content: '✦';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  color: var(--amano-celestial-gold);
+  font-size: 0.8rem;
+  animation: amanoSparkle 2s infinite;
+}
+
+.amano-sparkle::after {
+  content: '✧';
+  position: absolute;
+  bottom: -5px;
+  left: -5px;
+  color: var(--amano-ethereal-cyan);
+  font-size: 0.6rem;
+  animation: amanoSparkle 2s infinite 1s;
 }

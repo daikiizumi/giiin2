@@ -3,42 +3,34 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Doc, Id } from "../../convex/_generated/dataModel";
 import { NewsForm } from "./NewsForm";
-import { toast } from "sonner";
 
 export function NewsManagement() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingNews, setEditingNews] = useState<Doc<"news"> | null>(null);
-  
   const news = useQuery(api.news.listAll);
   const deleteNews = useMutation(api.news.remove);
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingNews, setEditingNews] = useState<Doc<"news"> | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "published" | "draft">("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   const handleEdit = (newsItem: any) => {
-    // Convert the enhanced news item back to the base Doc type
-    const baseNewsItem: Doc<"news"> = {
-      _id: newsItem._id,
-      _creationTime: newsItem._creationTime,
-      title: newsItem.title,
-      content: newsItem.content,
-      category: newsItem.category,
-      publishDate: newsItem.publishDate,
-      isPublished: newsItem.isPublished,
-      authorId: newsItem.authorId,
-      thumbnailUrl: newsItem.thumbnailUrl || undefined,
-      thumbnailId: newsItem.thumbnailId,
+    // null を undefined に変換
+    const editableNews = {
+      ...newsItem,
+      thumbnailUrl: newsItem.thumbnailUrl || undefined
     };
-    setEditingNews(baseNewsItem);
+    setEditingNews(editableNews);
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (newsId: Id<"news">) => {
-    if (!confirm("このお知らせを削除しますか？")) return;
-    
-    try {
-      await deleteNews({ id: newsId });
-      toast.success("お知らせを削除しました");
-    } catch (error) {
-      console.error("Error deleting news:", error);
-      toast.error("お知らせの削除に失敗しました");
+  const handleDelete = async (id: Id<"news">) => {
+    if (confirm("このお知らせを削除してもよろしいですか？")) {
+      try {
+        await deleteNews({ id });
+      } catch (error) {
+        console.error("Failed to delete news:", error);
+      }
     }
   };
 
@@ -47,98 +39,175 @@ export function NewsManagement() {
     setEditingNews(null);
   };
 
+  const handleFormSuccess = () => {
+    // Form will close automatically
+  };
+
+  const categories = Array.from(new Set(news?.map(n => n.category) || []));
+
+  const filteredNews = news?.filter(newsItem => {
+    const matchesSearch = newsItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         newsItem.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === "all" || 
+                         (filterStatus === "published" && newsItem.isPublished) ||
+                         (filterStatus === "draft" && !newsItem.isPublished);
+    
+    const matchesCategory = filterCategory === "all" || newsItem.category === filterCategory;
+    
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
   if (!news) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">読み込み中...</span>
-        </div>
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 animate-amano-glow"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* ヘッダー */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">お知らせ管理</h2>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-yellow-400 flex items-center space-x-2 amano-text-glow">
+            <span>✨</span>
+            <span>お知らせ管理</span>
+          </h2>
+          <p className="text-gray-300 text-sm mt-1">
+            お知らせの追加・編集・削除
+          </p>
+        </div>
         <button
           onClick={() => setIsFormOpen(true)}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+          className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-500 hover:via-purple-500 hover:to-cyan-400 transition-all duration-500 transform hover:scale-105 amano-crystal-border animate-amano-glow"
         >
-          新規お知らせ作成
+          ➕ 新しいお知らせを追加
         </button>
       </div>
 
-      {/* お知らせ一覧 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {news.map((newsItem) => (
-          <div key={newsItem._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            {/* お知らせ情報 */}
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                      {newsItem.category}
-                    </span>
-                    {!newsItem.isPublished && (
-                      <span className="inline-block bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                        下書き
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2">{newsItem.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-3">{newsItem.content}</p>
-                </div>
-              </div>
-
-              {/* 追加情報 */}
-              <div className="space-y-1 text-sm text-gray-600 mb-4">
-                <p>公開日: {new Date(newsItem.publishDate).toLocaleDateString('ja-JP')}</p>
-                <p>作成日: {new Date(newsItem._creationTime).toLocaleDateString('ja-JP')}</p>
-              </div>
-
-              {/* 操作ボタン */}
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(newsItem)}
-                  className="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600 transition-colors"
-                >
-                  編集
-                </button>
-                <button
-                  onClick={() => handleDelete(newsItem._id)}
-                  className="flex-1 bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600 transition-colors"
-                >
-                  削除
-                </button>
-              </div>
-            </div>
+      {/* Filters */}
+      <div className="amano-bg-glass rounded-xl p-4 space-y-4 amano-crystal-border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <input
+              type="text"
+              placeholder="タイトル、内容で検索..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="auth-input-field"
+            />
           </div>
-        ))}
+          <div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="auth-input-field"
+            >
+              <option value="all">全てのステータス</option>
+              <option value="published">公開済み</option>
+              <option value="draft">下書き</option>
+            </select>
+          </div>
+          <div>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="auth-input-field"
+            >
+              <option value="all">全てのカテゴリ</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* お知らせが存在しない場合 */}
-      {news.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📢</div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">お知らせが登録されていません</h3>
-          <p className="text-gray-600 mb-6">最初のお知らせを作成してください</p>
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
-          >
-            お知らせを作成
-          </button>
-        </div>
-      )}
+      {/* News List */}
+      <div className="space-y-4">
+        {filteredNews && filteredNews.length > 0 ? (
+          filteredNews.map((newsItem) => (
+            <div key={newsItem._id} className="amano-bg-glass rounded-xl p-6 amano-crystal-border hover:shadow-2xl transition-all duration-300">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      newsItem.isPublished 
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white" 
+                        : "bg-gradient-to-r from-gray-500 to-gray-600 text-white"
+                    }`}>
+                      {newsItem.isPublished ? "公開済み" : "下書き"}
+                    </span>
+                    <span className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      {newsItem.category}
+                    </span>
+                    <span className="text-gray-400 text-xs">
+                      📅 {new Date(newsItem.publishDate).toLocaleDateString('ja-JP')}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-200 mb-2 line-clamp-2">
+                    {newsItem.title}
+                  </h3>
+                  
+                  <p className="text-gray-300 text-sm mb-3 line-clamp-3">
+                    {newsItem.content}
+                  </p>
+                  
+                  {newsItem.thumbnailUrl && (
+                    <div className="flex items-center space-x-2 text-sm text-gray-400">
+                      <span className="flex items-center text-purple-400">
+                        🖼️ サムネイル画像あり
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex space-x-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleEdit(newsItem)}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg text-sm hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 transform hover:scale-105"
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => handleDelete(newsItem._id)}
+                    className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg text-sm hover:from-pink-500 hover:to-red-500 transition-all duration-300 transform hover:scale-105"
+                  >
+                    削除
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 amano-bg-glass rounded-xl amano-crystal-border">
+            <div className="text-6xl mb-4">📰</div>
+            <p className="text-gray-300 text-lg">
+              {searchTerm || filterStatus !== "all" || filterCategory !== "all" 
+                ? "条件に一致するお知らせが見つかりません" 
+                : "お知らせが登録されていません"}
+            </p>
+            {!searchTerm && filterStatus === "all" && filterCategory === "all" && (
+              <button
+                onClick={() => setIsFormOpen(true)}
+                className="mt-4 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white px-6 py-3 rounded-lg font-medium hover:from-yellow-500 hover:via-purple-500 hover:to-cyan-400 transition-all duration-500 transform hover:scale-105"
+              >
+                最初のお知らせを追加
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* お知らせ作成・編集フォーム */}
+      {/* Form Modal */}
       {isFormOpen && (
         <NewsForm
-          news={editingNews || undefined}
+          news={editingNews}
           onClose={handleFormClose}
         />
       )}

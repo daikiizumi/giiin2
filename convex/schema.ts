@@ -94,6 +94,30 @@ const applicationTables = {
     createdBy: v.id("users"),
     updatedBy: v.optional(v.id("users")),
   }).index("by_order", ["order", "isActive"]),
+
+  // メール認証用のテーブル
+  emailVerificationTokens: defineTable({
+    email: v.string(),
+    token: v.string(),
+    type: v.union(v.literal("verification"), v.literal("password_reset")),
+    expiresAt: v.number(),
+    used: v.boolean(),
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_token", ["token"])
+    .index("by_email", ["email"])
+    .index("by_email_and_type", ["email", "type"]),
+
+  // ユーザーのメール認証状態を管理
+  userEmailStatus: defineTable({
+    userId: v.id("users"),
+    email: v.string(),
+    isVerified: v.boolean(),
+    verifiedAt: v.optional(v.number()),
+    verificationRequestedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_email", ["email"]),
 };
 
 export default defineSchema({
