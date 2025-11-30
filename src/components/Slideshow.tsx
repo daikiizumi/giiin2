@@ -54,8 +54,6 @@ export function Slideshow() {
             {currentSlideData.linkUrl && (
               <a
                 href={currentSlideData.linkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-block bg-white text-gray-800 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg relative z-10"
               >
                 詳細を見る
@@ -78,8 +76,6 @@ export function Slideshow() {
             {currentSlideData.linkUrl && (
               <a
                 href={currentSlideData.linkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-block bg-white text-gray-800 px-3 sm:px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg text-sm sm:text-base relative z-10"
               >
                 詳細を見る

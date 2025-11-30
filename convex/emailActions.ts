@@ -15,6 +15,11 @@ export const sendVerificationEmail = action({
   },
   handler: async (ctx, args) => {
     try {
+      // 削除されたユーザーのデータをクリーンアップ
+      await ctx.runMutation(internal.emailAuth.cleanupDeletedUserData, {
+        email: args.email
+      });
+
       // ユーザーIDが提供されていない場合、メールアドレスから検索
       let userId = args.userId;
       if (!userId) {
@@ -40,7 +45,7 @@ export const sendVerificationEmail = action({
       });
 
       // 認証URLを生成（Convexのデプロイメントドメインを使用）
-      const baseUrl = process.env.CONVEX_SITE_URL || `https://${process.env.CONVEX_CLOUD_URL?.replace('https://', '')}`;
+      const baseUrl = process.env.CONVEX_SITE_URL || process.env.CONVEX_CLOUD_URL || `https://${process.env.CONVEX_CLOUD_URL?.replace('https://', '')}`;
       const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
       // メール送信
@@ -226,7 +231,7 @@ export const sendPasswordResetEmail = action({
       });
 
       // リセットURLを生成
-      const baseUrl = process.env.CONVEX_SITE_URL || `https://${process.env.CONVEX_CLOUD_URL?.replace('https://', '')}`;
+      const baseUrl = process.env.CONVEX_SITE_URL || process.env.CONVEX_CLOUD_URL || `https://${process.env.CONVEX_CLOUD_URL?.replace('https://', '')}`;
       const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
       // メール送信
@@ -401,5 +406,24 @@ export const resendVerificationEmail = action({
       email: user.email,
       userId: userId
     });
+  },
+});
+
+// 新規登録前のクリーンアップ
+export const prepareEmailForSignup = action({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      // 削除されたユーザーのデータをクリーンアップ
+      await ctx.runMutation(internal.emailAuth.cleanupDeletedUserData, {
+        email: args.email
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Cleanup error:", error);
+      // クリーンアップエラーでも成功を返す（登録は続行）
+      return { success: true };
+    }
   },
 });

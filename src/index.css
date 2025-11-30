@@ -84,6 +84,19 @@
     rgba(30, 58, 138, 0.9) 100%);
 }
 
+/* サイドバー専用の背景スタイル */
+.amano-bg-sidebar {
+  background: linear-gradient(180deg, 
+    rgba(15, 12, 41, 0.95) 0%, 
+    rgba(26, 11, 61, 0.9) 25%, 
+    rgba(36, 36, 62, 0.85) 50%, 
+    rgba(48, 43, 99, 0.9) 75%, 
+    rgba(15, 52, 96, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(245, 158, 11, 0.2);
+  box-shadow: 4px 0 20px rgba(76, 29, 149, 0.3);
+}
+
 .amano-bg-card {
   background: linear-gradient(135deg, 
     rgba(248, 250, 252, 0.05) 0%, 
@@ -715,4 +728,30 @@ a:focus {
   color: var(--amano-ethereal-cyan);
   font-size: 0.6rem;
   animation: amanoSparkle 2s infinite 1s;
+}
+
+/* PC版サイドバーのスクロールバーカスタマイズ */
+@media (min-width: 1024px) {
+  .amano-bg-sidebar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .amano-bg-sidebar::-webkit-scrollbar-track {
+    background: rgba(26, 11, 61, 0.3);
+    border-radius: 4px;
+  }
+  
+  .amano-bg-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, 
+      rgba(245, 158, 11, 0.6), 
+      rgba(76, 29, 149, 0.6));
+    border-radius: 4px;
+    border: 1px solid rgba(26, 11, 61, 0.5);
+  }
+  
+  .amano-bg-sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, 
+      rgba(245, 158, 11, 0.8), 
+      rgba(8, 145, 178, 0.8));
+  }
 }
