@@ -18,7 +18,7 @@ export function QuestionManagement() {
   const [editingQuestionId, setEditingQuestionId] = useState<Id<"questions"> | null>(null);
   const editingQuestionDetail = useQuery(
     api.questions.getById,
-    editingQuestionId ? { id: editingQuestionId } : "skip"
+    editingQuestionId ? { questionId: editingQuestionId } : "skip"
   );
 
   const handleEdit = (question: Doc<"questions">) => {
@@ -29,7 +29,7 @@ export function QuestionManagement() {
   const handleDelete = async (id: Id<"questions">) => {
     if (confirm("この質問を削除してもよろしいですか？")) {
       try {
-        await deleteQuestion({ id });
+        await deleteQuestion({ questionId: id });
       } catch (error) {
         console.error("Failed to delete question:", error);
       }

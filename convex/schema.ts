@@ -177,6 +177,78 @@ const applicationTables = {
     .index("by_age_group", ["ageGroup"])
     .index("by_gender", ["gender"])
     .index("by_region", ["region"]),
+
+  // 外部記事ソース管理
+  externalSources: defineTable({
+    councilMemberId: v.id("councilMembers"),
+    sourceType: v.union(
+      v.literal("blog"),
+      v.literal("facebook"),
+      v.literal("twitter"),
+      v.literal("instagram"),
+      v.literal("rss")
+    ),
+    sourceUrl: v.string(),
+    sourceName: v.optional(v.string()),
+    isActive: v.boolean(),
+    lastFetchedAt: v.optional(v.number()),
+    fetchInterval: v.optional(v.number()), // 取得間隔（分）
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_council_member", ["councilMemberId"])
+    .index("by_source_type", ["sourceType"])
+    .index("by_active", ["isActive"]),
+
+  // 取得した外部記事
+  externalArticles: defineTable({
+    title: v.string(),
+    content: v.string(),
+    excerpt: v.optional(v.string()), // 記事の要約
+    sourceUrl: v.string(),
+    originalUrl: v.string(), // 元記事のURL
+    imageUrl: v.optional(v.string()),
+    publishedAt: v.number(),
+    fetchedAt: v.number(),
+    councilMemberId: v.id("councilMembers"),
+    sourceId: v.id("externalSources"),
+    sourceType: v.union(
+      v.literal("blog"),
+      v.literal("facebook"),
+      v.literal("twitter"),
+      v.literal("instagram"),
+      v.literal("rss")
+    ),
+    category: v.union(
+      v.literal("政策・提案"),
+      v.literal("活動報告"),
+      v.literal("市政情報"),
+      v.literal("地域イベント"),
+      v.literal("お知らせ"),
+      v.literal("その他")
+    ),
+    isActive: v.boolean(),
+    viewCount: v.optional(v.number()),
+  })
+    .index("by_council_member", ["councilMemberId"])
+    .index("by_category", ["category"])
+    .index("by_published_at", ["publishedAt"])
+    .index("by_source_type", ["sourceType"])
+    .index("by_active", ["isActive"])
+    .index("by_council_member_and_category", ["councilMemberId", "category"])
+    .index("by_source_id", ["sourceId"]),
+
+  // メニュー表示設定
+  menuSettings: defineTable({
+    menuKey: v.string(), // メニューの識別子
+    menuName: v.string(), // メニューの表示名
+    isVisible: v.boolean(), // 表示・非表示
+    order: v.number(), // 表示順序
+    description: v.optional(v.string()), // メニューの説明
+    updatedBy: v.id("users"),
+    updatedAt: v.number(),
+  }).index("by_menu_key", ["menuKey"])
+    .index("by_order", ["order"]),
 };
 
 export default defineSchema({

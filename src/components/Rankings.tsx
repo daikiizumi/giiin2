@@ -14,7 +14,7 @@ export function Rankings({ onMemberClick, onQuestionClick }: RankingsProps = {})
   const [showAllPartyRanking, setShowAllPartyRanking] = useState(false);
 
   const members = useQuery(api.councilMembers.list, {});
-  const questions = useQuery(api.questions.list);
+  const questions = useQuery(api.questions.list, {});
   const topLikedQuestions = useQuery(api.questions.getTopLikedQuestions, { limit: 10 });
   const user = useQuery(api.auth.loggedInUser);
   const toggleLike = useMutation(api.likes.toggle);

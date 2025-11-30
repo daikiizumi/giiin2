@@ -85,7 +85,7 @@ export function QuestionForm({ question, onClose, onSuccess }: QuestionFormProps
       if (question) {
         // 更新
         await updateQuestion({
-          id: question._id,
+          questionId: question._id,
           title: formData.title,
           content: formData.content,
           category: formData.category,
@@ -136,7 +136,7 @@ export function QuestionForm({ question, onClose, onSuccess }: QuestionFormProps
 
     setDeletingResponseId(responseId);
     try {
-      await deleteResponse({ id: responseId as Id<"responses"> });
+      await deleteResponse({ responseId: responseId as Id<"responses"> });
       onSuccess(); // Refresh the data
     } catch (error) {
       console.error("Error deleting response:", error);
@@ -155,7 +155,7 @@ export function QuestionForm({ question, onClose, onSuccess }: QuestionFormProps
 
     setIsDeletingQuestion(true);
     try {
-      await deleteQuestion({ id: question._id });
+      await deleteQuestion({ questionId: question._id });
       onSuccess(); // Refresh the data
       onClose(); // Close the form
     } catch (error) {
