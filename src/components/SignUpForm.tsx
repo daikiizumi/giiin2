@@ -23,6 +23,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
   const { signIn } = useAuthActions();
   const saveDemographics = useMutation(api.userDemographics.create);
   const sendVerificationEmail = useAction(api.emailActions.sendVerificationEmail);
+  const prepareEmailForSignup = useAction(api.emailActions.prepareEmailForSignup);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +46,10 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
     setIsLoading(true);
 
     try {
+      // まず削除されたユーザーのデータをクリーンアップ
+      console.log("Preparing email for signup:", email);
+      await prepareEmailForSignup({ email });
+
       // FormDataを作成してConvex Authに渡す
       const formData = new FormData();
       formData.set("email", email);
@@ -52,12 +57,14 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
       formData.set("name", name);
       formData.set("flow", "signUp");
 
+      console.log("Starting signup process with:", { email, name });
+
       // Convex Authを使用してアカウント作成
       const result = await signIn("password", formData);
       console.log("SignIn result:", result);
 
       // 少し待ってからユーザー情報を取得し、処理を実行
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // アカウント作成成功後、属性情報を保存
       try {
@@ -66,6 +73,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
           gender: gender as any,
           region: region as any,
         });
+        console.log("Demographics saved successfully");
       } catch (demoError) {
         console.error("Demographics save error:", demoError);
         // 属性情報の保存に失敗してもアカウント作成は成功とする
@@ -166,6 +174,21 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
               required
               minLength={8}
             />
+            <div className="mt-2 text-xs text-gray-400 bg-gray-800/30 p-2 rounded border border-gray-600">
+              <p className="font-medium text-yellow-400 mb-1">パスワード設定条件：</p>
+              <ul className="space-y-1">
+                <li className="flex items-center space-x-2">
+                  <span className={password.length >= 8 ? "text-green-400" : "text-gray-400"}>
+                    {password.length >= 8 ? "✓" : "○"}
+                  </span>
+                  <span>8文字以上</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="text-gray-400">○</span>
+                  <span>英数字・記号を組み合わせることを推奨</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div>
@@ -181,6 +204,12 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn, onShowTerms }: SignUpF
               placeholder="パスワードを再入力"
               required
             />
+            {confirmPassword && password !== confirmPassword && (
+              <p className="mt-1 text-xs text-red-400">パスワードが一致しません</p>
+            )}
+            {confirmPassword && password === confirmPassword && password.length >= 8 && (
+              <p className="mt-1 text-xs text-green-400">✓ パスワードが一致しています</p>
+            )}
           </div>
         </div>
 

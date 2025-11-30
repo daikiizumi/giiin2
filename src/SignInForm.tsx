@@ -2,11 +2,14 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAction } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 export function SignInForm() {
   const { signIn } = useAuthActions();
   const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [submitting, setSubmitting] = useState(false);
+  const sendVerificationEmail = useAction(api.emailActions.sendVerificationEmail);
 
   return (
     <div className="w-full min-w-80 bg-white p-6 rounded-xl shadow-lg border border-gray-200">
@@ -19,8 +22,21 @@ export function SignInForm() {
           const formData = new FormData(e.target as HTMLFormElement);
           formData.set("flow", flow);
           void signIn("password", formData)
-            .then(() => {
-              toast.success(flow === "signIn" ? "ログインしました" : "アカウントを作成しました");
+            .then(async () => {
+              if (flow === "signUp") {
+                // 新規登録の場合、認証メールを送信
+                try {
+                  const email = formData.get("email") as string;
+                  await sendVerificationEmail({ email });
+                  toast.success("アカウントを作成しました！認証メールをご確認ください。");
+                } catch (emailError) {
+                  console.error("Email verification error:", emailError);
+                  toast.success("アカウントを作成しました。");
+                  toast.warning("認証メールの送信に失敗しました。後でお試しください。");
+                }
+              } else {
+                toast.success("ログインしました");
+              }
               setSubmitting(false);
             })
             .catch((error) => {

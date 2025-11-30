@@ -453,7 +453,9 @@ export function QuestionForm({ question, onClose, onSuccess }: QuestionFormProps
                               {new Date(response.responseDate).toLocaleDateString("ja-JP")}
                             </span>
                           </div>
-                          <p className="text-gray-300 text-sm leading-relaxed">{response.content}</p>
+                          <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                            {response.content}
+                          </div>
                           {response.documentUrl && (
                             <a
                               href={response.documentUrl}

@@ -3,7 +3,6 @@ import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Dashboard } from "./components/Dashboard";
 import { QuestionsList } from "./components/QuestionsList";
@@ -19,18 +18,69 @@ import { TermsAndPrivacy } from "./components/TermsAndPrivacy";
 import { ExternalArticles } from "./components/ExternalArticles";
 import { ExternalArticleDetail } from "./components/ExternalArticleDetail";
 import { ScrollToTopButton } from "./components/ScrollToTopButton";
+import { LoginModal } from "./components/LoginModal";
 import { useUrlNavigation } from "./hooks/useUrlNavigation";
 
-export default function App() {
+// ヘルパー関数：回答内容のキーワードを装飾
+function formatResponseContent(content: string) {
+  return content.split('\n').map((line, lineIndex) => {
+    let formattedLine = line;
+    
+    // 「質問側の内容」を装飾
+    if (line.includes('質問側の内容')) {
+      formattedLine = line.replace(
+        /質問側の内容/g,
+        '<span class="bg-gradient-to-r from-yellow-400 to-orange-400 text-black px-2 py-1 rounded font-bold amano-text-glow">質問側の内容</span>'
+      );
+    }
+    
+    // 「市側の回答」を装飾
+    if (line.includes('市側の回答')) {
+      formattedLine = formattedLine.replace(
+        /市側の回答/g,
+        '<span class="bg-gradient-to-r from-cyan-400 to-blue-400 text-black px-2 py-1 rounded font-bold amano-text-glow">市側の回答</span>'
+      );
+    }
+    
+    return <div key={lineIndex} className="mb-1" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
+  });
+}
+
+// ページトップにスクロールするヘルパー関数
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+function AppContent() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [selectedMemberId, setSelectedMemberId] = useState<Id<"councilMembers"> | null>(null);
   const [selectedNewsId, setSelectedNewsId] = useState<Id<"news"> | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState<Id<"externalArticles"> | null>(null);
   const [selectedQuestionId, setSelectedQuestionId] = useState<Id<"questions"> | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // メニュー設定を取得
   const visibleMenus = useQuery(api.menuSettings.getVisibleMenus);
+  
+  // 管理者権限チェック（認証済みユーザーのみ）
+  const isAdmin = useQuery(api.admin.isAdmin);
+  
+  // ログインユーザー情報を取得
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  
+  // ユーザーの役割を取得
+  const userRole = useQuery(api.admin.getUserRole);
+
+  // 認証状態を監視してログインモーダルを自動で閉じる
+  useEffect(() => {
+    if (isAdmin !== undefined && isAdmin !== false) {
+      setShowLoginModal(false);
+    }
+  }, [isAdmin]);
 
   // URL navigation hook
   useUrlNavigation({
@@ -74,6 +124,7 @@ export default function App() {
     setSelectedMemberId(memberId);
     setCurrentView("memberDetail");
     setShowMobileMenu(false);
+    scrollToTop(); // ページトップにスクロール
     
     // Update URL
     const url = new URL(window.location.href);
@@ -89,6 +140,7 @@ export default function App() {
     setSelectedNewsId(newsId);
     setCurrentView("newsDetail");
     setShowMobileMenu(false);
+    scrollToTop(); // ページトップにスクロール
     
     // Update URL
     const url = new URL(window.location.href);
@@ -104,6 +156,7 @@ export default function App() {
     setSelectedArticleId(articleId);
     setCurrentView("externalArticleDetail");
     setShowMobileMenu(false);
+    scrollToTop(); // ページトップにスクロール
     
     // Update URL
     const url = new URL(window.location.href);
@@ -119,6 +172,7 @@ export default function App() {
     setSelectedQuestionId(questionId);
     setCurrentView("questionDetail");
     setShowMobileMenu(false);
+    scrollToTop(); // ページトップにスクロール
     
     // Update URL
     const url = new URL(window.location.href);
@@ -131,12 +185,30 @@ export default function App() {
   };
 
   const handleViewChange = (view: string) => {
+    // 管理画面にアクセスしようとした場合の処理を改善
+    if (view === "admin") {
+      // 認証状態をチェック
+      if (isAdmin === undefined) {
+        // まだ認証状態が不明な場合は少し待つ
+        return;
+      }
+      
+      if (isAdmin === false) {
+        // 認証されていない場合はログインモーダルを表示
+        setShowLoginModal(true);
+        return;
+      }
+      
+      // 認証済みで管理者権限がある場合は管理画面に遷移
+    }
+
     setCurrentView(view);
     setSelectedMemberId(null);
     setSelectedNewsId(null);
     setSelectedArticleId(null);
     setSelectedQuestionId(null);
     setShowMobileMenu(false);
+    scrollToTop(); // ページトップにスクロール
     
     // Update URL
     const url = new URL(window.location.href);
@@ -232,49 +304,50 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen amano-bg text-white">
-      <Authenticated>
-        <div className="flex flex-col lg:flex-row min-h-screen">
-          {/* サイドバー */}
-          <div className={`lg:w-64 amano-bg-sidebar border-r border-purple-500/30 ${showMobileMenu ? 'block' : 'hidden lg:block'}`}>
-            <div className="p-6">
-              {/* ロゴ・タイトル */}
-              <div className="text-center mb-8">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent amano-text-glow">
-                   GIIIN/ギイーン
-                </h1>
-                <p className="text-xs text-gray-400 mt-1">三原市議会情報サイト</p>
-              </div>
+    <div className="flex flex-col lg:flex-row min-h-screen">
+      {/* サイドバー - PC版では固定、モバイル版では通常通り */}
+      <div className={`lg:w-64 lg:fixed lg:h-screen lg:overflow-y-auto amano-bg-sidebar border-r border-purple-500/30 ${showMobileMenu ? 'block' : 'hidden lg:block'}`}>
+        <div className="p-6">
+          {/* ロゴ・タイトル */}
+          <div className="text-center mb-8">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent amano-text-glow">
+               GIIIN/ギイーン
+            </h1>
+            <p className="text-xs text-gray-400 mt-1">三原市議会情報サイト</p>
+          </div>
 
-              {/* ナビゲーション */}
-              <nav className="space-y-2">
-                <button
-                  onClick={() => handleViewChange("dashboard")}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
-                    currentView === "dashboard"
-                      ? "bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white shadow-lg transform scale-105 amano-card-glow"
-                      : "text-gray-300 hover:bg-purple-800/30 hover:text-white"
-                  }`}
-                >
-                  <span className="text-xl">🏠</span>
-                  <span className="font-medium">ダッシュボード</span>
-                </button>
+          {/* ナビゲーション */}
+          <nav className="space-y-2">
+            <button
+              onClick={() => handleViewChange("dashboard")}
+              className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
+                currentView === "dashboard"
+                  ? "bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white shadow-lg transform scale-105 amano-card-glow"
+                  : "text-gray-300 hover:bg-purple-800/30 hover:text-white"
+              }`}
+            >
+              <span className="text-xl">🏠</span>
+              <span className="font-medium">ダッシュボード</span>
+            </button>
 
-                {menuItems.map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => handleViewChange(item.key)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
-                      currentView === item.key
-                        ? "bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white shadow-lg transform scale-105 amano-card-glow"
-                        : "text-gray-300 hover:bg-purple-800/30 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    <span className="font-medium">{item.name}</span>
-                  </button>
-                ))}
+            {menuItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => handleViewChange(item.key)}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
+                  currentView === item.key
+                    ? "bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white shadow-lg transform scale-105 amano-card-glow"
+                    : "text-gray-300 hover:bg-purple-800/30 hover:text-white"
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.name}</span>
+              </button>
+            ))}
 
+            {/* 管理メニューは管理者のみ表示 */}
+            <Authenticated>
+              {isAdmin && (
                 <button
                   onClick={() => handleViewChange("admin")}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
@@ -286,70 +359,90 @@ export default function App() {
                   <span className="text-xl">🛠️</span>
                   <span className="font-medium">管理</span>
                 </button>
-              </nav>
+              )}
+            </Authenticated>
+          </nav>
 
-              {/* ユーザー情報 */}
-              <div className="mt-8 pt-6 border-t border-purple-500/30">
-                <SignOutButton />
-              </div>
-
-              {/* フッター */}
-              <div className="mt-8 pt-6 border-t border-purple-500/30 text-center">
-                <button
-                  onClick={() => handleViewChange("terms")}
-                  className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
-                >
-                  利用規約・プライバシーポリシー
-                </button>
-                <p className="text-xs text-gray-500 mt-2">© 2024 GIIIN</p>
-              </div>
-            </div>
+          {/* ユーザー情報 */}
+          <div className="mt-8 pt-6 border-t border-purple-500/30">
+            <Authenticated>
+              {/* ユーザー名と権限表示 */}
+              {loggedInUser && (
+                <div className="mb-4 p-3 rounded-lg amano-bg-glass border border-purple-500/20">
+                  <div className="text-sm text-gray-300 mb-1">ログイン中</div>
+                  <div className="font-medium text-yellow-400 text-sm mb-1">
+                    {loggedInUser.name || loggedInUser.email || "ユーザー"}
+                  </div>
+                  <div className="text-xs text-cyan-400">
+                    {userRole === "superAdmin" && "🔧 スーパー管理者"}
+                    {userRole === "admin" && "⚙️ 管理者"}
+                    {userRole === "user" && "👤 一般ユーザー"}
+                    {userRole === "guest" && "🔒 ゲスト"}
+                  </div>
+                </div>
+              )}
+              <SignOutButton />
+            </Authenticated>
+            <Unauthenticated>
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="w-full px-4 py-2 bg-gradient-to-r from-yellow-500 via-purple-500 to-cyan-400 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300"
+              >
+                新規/ログイン
+              </button>
+            </Unauthenticated>
           </div>
 
-          {/* メインコンテンツ */}
-          <div className="flex-1 flex flex-col">
-            {/* モバイルヘッダー */}
-            <div className="lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-purple-500/30 p-4">
-              <div className="flex items-center justify-between">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  GIIIN/ギイーン
-                </h1>
-                <button
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="p-2 text-gray-300 hover:text-white transition-colors"
-                >
-                  <span className="text-xl">{showMobileMenu ? "✕" : "☰"}</span>
-                </button>
-              </div>
-            </div>
+          {/* フッター */}
+          <div className="mt-8 pt-6 border-t border-purple-500/30 text-center">
+            <button
+              onClick={() => handleViewChange("terms")}
+              className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+            >
+              利用規約・プライバシーポリシー
+            </button>
+            <p className="text-xs text-gray-500 mt-2">© 2024 GIIIN</p>
+          </div>
+        </div>
+      </div>
 
-            {/* コンテンツエリア */}
-            <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-              {renderContent()}
-            </main>
+      {/* メインコンテンツ - PC版ではサイドバー分の左マージンを追加 */}
+      <div className="flex-1 flex flex-col lg:ml-64">
+        {/* モバイルヘッダー */}
+        <div className="lg:hidden bg-gray-900/95 backdrop-blur-sm border-b border-purple-500/30 p-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              GIIIN/ギイーン
+            </h1>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="p-2 text-gray-300 hover:text-white transition-colors"
+            >
+              <span className="text-xl">{showMobileMenu ? "✕" : "☰"}</span>
+            </button>
           </div>
         </div>
 
-        {/* スクロールトップボタン */}
-        <ScrollToTopButton />
-      </Authenticated>
+        {/* コンテンツエリア */}
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          {renderContent()}
+        </main>
+      </div>
 
-      <Unauthenticated>
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent amano-text-glow mb-4">
-                🏛️ GIIIN/ギイーン
-              </h1>
-              <p className="text-gray-300 text-lg">三原市議会情報サイト</p>
-              <p className="text-gray-400 text-sm mt-2">
-                議会質問・議員情報を簡単に検索・閲覧
-              </p>
-            </div>
-            <SignInForm />
-          </div>
-        </div>
-      </Unauthenticated>
+      {/* ログインモーダル */}
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+      />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <div className="min-h-screen amano-bg text-white">
+      <AppContent />
+      <ScrollToTopButton />
     </div>
   );
 }
@@ -450,7 +543,7 @@ function QuestionDetail({
       {responses && responses.length > 0 && (
         <div className="amano-bg-card rounded-xl p-6 amano-crystal-border">
           <h2 className="text-xl font-bold text-yellow-400 mb-6 amano-text-glow">
-            💬 回答 ({responses.length}件)
+            💬 AI要約回答 ({responses.length}件)
           </h2>
           <div className="space-y-6">
             {responses.map((response, index) => (
@@ -473,8 +566,8 @@ function QuestionDetail({
                     📅 {new Date(response.responseDate).toLocaleDateString("ja-JP")}
                   </div>
                 </div>
-                <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
-                  {response.content}
+                <div className="text-gray-200 leading-relaxed">
+                  {formatResponseContent(response.content)}
                 </div>
               </div>
             ))}

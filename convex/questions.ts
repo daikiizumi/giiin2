@@ -114,6 +114,7 @@ export const getById = query({
       responseCount: responses.length,
       likeCount: likes.length,
       isLiked,
+      responses,
     };
   },
 });

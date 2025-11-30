@@ -172,3 +172,52 @@ export const getEmailVerificationStatus = query({
     return status;
   },
 });
+
+// 削除されたユーザーのデータクリーンアップ
+export const cleanupDeletedUserData = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (!existingUser) {
+      // 古い認証トークンを削除
+      const oldTokens = await ctx.db
+        .query("emailVerificationTokens")
+        .filter((q) => q.eq(q.field("email"), args.email))
+        .collect();
+
+      for (const token of oldTokens) {
+        await ctx.db.delete(token._id);
+      }
+
+      // 古いメール認証状態を削除
+      const oldEmailStatus = await ctx.db
+        .query("userEmailStatus")
+        .filter((q) => q.eq(q.field("email"), args.email))
+        .collect();
+
+      for (const status of oldEmailStatus) {
+        await ctx.db.delete(status._id);
+      }
+
+      // 古いauthAccountsを削除（重要：これが重複エラーの主な原因）
+      try {
+        const authAccounts = await ctx.db.query("authAccounts").collect();
+        const orphanedAuthAccounts = authAccounts.filter(account => 
+          account.provider === "password" && 
+          (account.providerAccountId === args.email ||
+           (account.providerAccountId && account.providerAccountId.includes(args.email)))
+        );
+
+        for (const account of orphanedAuthAccounts) {
+          await ctx.db.delete(account._id);
+        }
+      } catch (error) {
+        console.error("Failed to cleanup auth accounts:", error);
+      }
+    }
+  },
+});
