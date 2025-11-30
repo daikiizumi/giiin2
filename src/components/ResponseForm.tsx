@@ -46,7 +46,7 @@ export function ResponseForm({ questionId, response, onClose, onSuccess, onCance
       if (response) {
         // 編集の場合
         await updateResponse({
-          id: response._id,
+          responseId: response._id,
           content: formData.content,
           respondentTitle: formData.respondentTitle || undefined,
           department: formData.department || undefined,
@@ -64,6 +64,7 @@ export function ResponseForm({ questionId, response, onClose, onSuccess, onCance
           respondentTitle: formData.respondentTitle || undefined,
           department: formData.department || undefined,
           documentUrl: formData.documentUrl || undefined,
+          responseDate: Date.now(),
         });
       }
       

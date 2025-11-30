@@ -92,7 +92,10 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
           ...newsData,
         });
       } else {
-        await createNews(newsData);
+        await createNews({
+          ...newsData,
+          publishDate: Date.now(),
+        });
       }
       onClose();
     } catch (error) {
